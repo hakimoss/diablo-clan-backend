@@ -26,7 +26,7 @@ public class UserController {
 	}
 	
 	@PostMapping("/connection")
-	public boolean connection(@RequestBody UserModel userModel) throws InterruptedException, ExecutionException {
+	public String[] connection(@RequestBody UserModel userModel) throws InterruptedException, ExecutionException {
 		return accountService.connection(userModel);
 	}
 }

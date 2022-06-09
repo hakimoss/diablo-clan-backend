@@ -6,7 +6,16 @@ public class UserModel {
 	private String userName;
 	private String password;
 	private String battleTag;
+	private String image;
 	
+	public String getImage() {
+		return image;
+	}
+
+	public void setImage(String image) {
+		this.image = image;
+	}
+
 	public UserModel() {
 		
 	}

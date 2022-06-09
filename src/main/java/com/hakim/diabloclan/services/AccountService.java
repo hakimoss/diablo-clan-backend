@@ -54,6 +54,7 @@ public class AccountService {
 		docData.put("password", userModel.getPassword());
 		docData.put("userName", userModel.getUserName());
 		docData.put("battleTag", userModel.getBattleTag());
+		docData.put("image", userModel.getImage());
 		docData.put("uid", userRecord.getUid());
 
 		ApiFuture<WriteResult> future = dbFirestore.collection("users").document(userRecord.getUid()).set(docData);
@@ -61,7 +62,7 @@ public class AccountService {
 		return "Successfully created new user" + userRecord.getUid();
 	}
 	
-	public boolean connection(UserModel userModel) throws InterruptedException, ExecutionException {
+	public String[] connection(UserModel userModel) throws InterruptedException, ExecutionException {
 		UserRecord userRecord;
 		try {
 			userRecord = FirebaseAuth.getInstance().getUserByEmail(userModel.getEmail());
@@ -72,12 +73,34 @@ public class AccountService {
 			var name = userRecord.getDisplayName();
 				
 			if(getDataUser(uid).getPassword().equals(userModel.getPassword())) {
-				System.out.println("marche !");
-				return true;
-						
+				Firestore dbFirestore = FirestoreClient.getFirestore();
+				DocumentReference docRef = dbFirestore.collection("users").document(uid);
+				ApiFuture<DocumentSnapshot> future2 = docRef.get();
+				DocumentSnapshot document2 = future2.get();
+				
+				if (document2.exists()) {
+					 
+					 System.out.println(document2.getData().get("battleTag"));
+					 
+					 // ajout
+					 String[] userConnectionString = {
+							 "true",
+							 userModel.getEmail(),
+							 userModel.getPassword(),
+							 document2.getData().get("userName").toString(),
+							 document2.getData().get("battleTag").toString(),
+							 document2.getData().get("image").toString()
+							 };
+					 return userConnectionString;
+				 } else {
+					  System.out.println("No such document!");
+					  String[] userConnectionString = {"false"};
+					return userConnectionString;
+				 }	
 			} else {
 				System.out.println("Marche pas !");
-				return false;
+				String[] userConnectionString = {"false"};
+				return userConnectionString;
 			}
 	
 		} catch (FirebaseAuthException e) {
@@ -85,7 +108,8 @@ public class AccountService {
 			e.printStackTrace();
 		}
 		System.out.println("exception");
-		return false;
+		String[] userConnectionString = {"false"};
+		return userConnectionString;
 	}
 	
 	public UserModel getDataUser(String uid) throws InterruptedException, ExecutionException {
