@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.hakim.diabloclan.models.UserModel;
@@ -27,12 +29,19 @@ import com.google.firebase.auth.UserRecord.CreateRequest;
 @Service
 public class AccountService {
 	
+	PasswordEncoder passwordEncoder;
+	
 	public String saveAccount(UserModel userModel) throws InterruptedException, ExecutionException {
 		System.out.println(userModel.getEmail());
 		System.out.println(userModel.getBattleTag());
 		System.out.println(userModel.getPassword());
 		System.out.println(userModel.getUserName());
-
+		
+		passwordEncoder = new BCryptPasswordEncoder();
+		
+		String encodedPassword = passwordEncoder.encode(userModel.getPassword());
+		userModel.setPassword(encodedPassword);
+		
 		CreateRequest request = new CreateRequest()
 				.setEmail(userModel.getEmail())
 				.setEmailVerified(false)
@@ -54,7 +63,7 @@ public class AccountService {
 		docData.put("password", userModel.getPassword());
 		docData.put("userName", userModel.getUserName());
 		docData.put("battleTag", userModel.getBattleTag());
-		docData.put("image", userModel.getImage());
+		docData.put("image", "1");
 		docData.put("uid", userRecord.getUid());
 
 		ApiFuture<WriteResult> future = dbFirestore.collection("users").document(userRecord.getUid()).set(docData);
@@ -68,15 +77,22 @@ public class AccountService {
 			userRecord = FirebaseAuth.getInstance().getUserByEmail(userModel.getEmail());
 			System.out.println("Successfully fetched user data: " + userRecord.getEmail());
 			
+			BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();  
+
+			System.out.println(userModel.getPassword());
 			var email2 = userRecord.getEmail();
 			var uid = userRecord.getUid();
 			var name = userRecord.getDisplayName();
-				
-			if(getDataUser(uid).getPassword().equals(userModel.getPassword())) {
-				Firestore dbFirestore = FirestoreClient.getFirestore();
-				DocumentReference docRef = dbFirestore.collection("users").document(uid);
-				ApiFuture<DocumentSnapshot> future2 = docRef.get();
-				DocumentSnapshot document2 = future2.get();
+			
+			
+			Firestore dbFirestore = FirestoreClient.getFirestore();
+			DocumentReference docRef = dbFirestore.collection("users").document(uid);
+			ApiFuture<DocumentSnapshot> future2 = docRef.get();
+			DocumentSnapshot document2 = future2.get();
+						
+			String dbPassword = document2.getData().get("password").toString();
+
+			if(encoder.matches(userModel.getPassword(), dbPassword)) {
 				
 				if (document2.exists()) {
 					 
